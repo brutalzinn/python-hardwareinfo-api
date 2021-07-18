@@ -9,14 +9,12 @@
 #include <string.h>
 #include <time.h>
 #include <locale.h>
-#include <shellapi.h>
-
-
-
+#include "Hardware.h"
 
 #pragma comment(lib, "ws2_32.lib")
 
 #pragma pack(push, 1)
+
 
 struct HWINFO_SENSORS_READING
 {
@@ -105,8 +103,6 @@ struct MAHM_SHARED_MEMORY_HEADER
 #define	MAHM_SHARED_MEMORY_ENTRY_FLAG_SHOW_IN_OSD  0x00000001
 #define	MAHM_SHARED_MEMORY_ENTRY_FLAG_SHOW_IN_LCD  0x00000002
 #define	MAHM_SHARED_MEMORY_ENTRY_FLAG_SHOW_IN_TRAY 0x00000004
-#define WM_MYMESSAGE (WM_USER + 1)
-
 
 enum class HwinfoReadingType
 {
@@ -151,14 +147,14 @@ L"<html>\n\t<head>\n\t\t<title>RemoteHWInfo</title>\n\t</head>\n\t<body>\n\t</bo
 const wchar_t HtmlNotFoundDataDefault[] =
 L"<html>\n\t<head>\n\t\t<title>RemoteHWInfo</title>\n\t</head>\n\t<body>\n\t\t404 Not Found\n\t</body>\n</html>";
 
-char *HtmlIndexData = 0;
+char* HtmlIndexData = 0;
 size_t HtmlIndexSize = 0;
 
-char *HtmlNotFoundData = 0;
+char* HtmlNotFoundData = 0;
 size_t HtmlNotFoundSize = 0;
 
 const unsigned int EntryTotalCount = 1024;
-bool EntryEnabled[EntryTotalCount] = {0};
+bool EntryEnabled[EntryTotalCount] = { 0 };
 
 unsigned int Port = 60000;
 
@@ -167,17 +163,17 @@ bool LogFileEnable = true;
 
 #define LOG(expression) Log(#expression, strrchr(__FILE__, '\\') + 1, __LINE__, (intptr_t) (expression))
 
-FILE *LogFile = 0;
+FILE* LogFile = 0;
 
-intptr_t Log(const char *expression, const char *fileName, unsigned int line, intptr_t result)
+intptr_t Log(const char* expression, const char* fileName, unsigned int line, intptr_t result)
 {
 	if (LogFile)
 	{
 		time_t t = time(0);
-		tm *local = localtime(&t);
+		tm* local = localtime(&t);
 
 		fprintf(LogFile, "[%02d.%02d.%04d %02d:%02d:%02d][%8s:%04d] %-102s %-20zd (0x%0*zX)\n",
-				local->tm_mday, local->tm_mon + 1, local->tm_year + 1900, local->tm_hour, local->tm_min, local->tm_sec, fileName, line, expression, result, (unsigned int) sizeof(result) * 2, result);
+			local->tm_mday, local->tm_mon + 1, local->tm_year + 1900, local->tm_hour, local->tm_min, local->tm_sec, fileName, line, expression, result, (unsigned int)sizeof(result) * 2, result);
 
 		fflush(LogFile);
 	}
@@ -185,11 +181,11 @@ intptr_t Log(const char *expression, const char *fileName, unsigned int line, in
 	return result;
 }
 
-size_t LoadFile(const char *fileName, void **fileData)
+size_t LoadFile(const char* fileName, void** fileData)
 {
 	size_t readSize = 0;
 
-	FILE *file = 0;
+	FILE* file = 0;
 
 	LOG(file = fopen(fileName, "rb"));
 
@@ -222,7 +218,7 @@ size_t LoadFile(const char *fileName, void **fileData)
 	return readSize;
 }
 
-size_t UnicodeToUtf8(const wchar_t *unicode, char **utf8)
+size_t UnicodeToUtf8(const wchar_t* unicode, char** utf8)
 {
 	size_t utf8Size = 0;
 
@@ -230,17 +226,17 @@ size_t UnicodeToUtf8(const wchar_t *unicode, char **utf8)
 
 	if (unicodeSize > 0)
 	{
-		LOG(utf8Size = WideCharToMultiByte(CP_UTF8, 0, unicode, (int) unicodeSize, 0, 0, 0, 0));
+		LOG(utf8Size = WideCharToMultiByte(CP_UTF8, 0, unicode, (int)unicodeSize, 0, 0, 0, 0));
 
 		if (utf8Size > 0)
 		{
 			if (utf8)
 			{
-				LOG(*utf8 = (char*) malloc(utf8Size * sizeof(char)));
+				LOG(*utf8 = (char*)malloc(utf8Size * sizeof(char)));
 
 				if (*utf8)
 				{
-					LOG(utf8Size = WideCharToMultiByte(CP_UTF8, 0, unicode, (int) unicodeSize, *utf8, (int) utf8Size, 0, 0));
+					LOG(utf8Size = WideCharToMultiByte(CP_UTF8, 0, unicode, (int)unicodeSize, *utf8, (int)utf8Size, 0, 0));
 
 					if (utf8Size == 0)
 						free(*utf8);
@@ -252,7 +248,7 @@ size_t UnicodeToUtf8(const wchar_t *unicode, char **utf8)
 	return utf8Size;
 }
 
-char* FormatSpecialChar(char *str)
+char* FormatSpecialChar(char* str)
 {
 	size_t length = strlen(str);
 
@@ -274,7 +270,7 @@ char* FormatSpecialChar(char *str)
 	return str;
 }
 
-wchar_t* FormatSpecialCharUnicode(wchar_t *str)
+wchar_t* FormatSpecialCharUnicode(wchar_t* str)
 {
 	size_t length = wcslen(str);
 
@@ -296,7 +292,7 @@ wchar_t* FormatSpecialCharUnicode(wchar_t *str)
 	return str;
 }
 
-bool GetHwinfo(HWINFO_SENSORS_SHARED_MEM2 *hwinfo, void **sensors, void **readings)
+bool GetHwinfo(HWINFO_SENSORS_SHARED_MEM2* hwinfo, void** sensors, void** readings)
 {
 	bool result = false;
 
@@ -306,7 +302,7 @@ bool GetHwinfo(HWINFO_SENSORS_SHARED_MEM2 *hwinfo, void **sensors, void **readin
 
 	if (mapFile)
 	{
-		void *mapAddress = 0;
+		void* mapAddress = 0;
 
 		LOG(mapAddress = MapViewOfFile(mapFile, FILE_MAP_READ, 0, 0, 0));
 
@@ -322,7 +318,7 @@ bool GetHwinfo(HWINFO_SENSORS_SHARED_MEM2 *hwinfo, void **sensors, void **readin
 				LOG(*sensors = malloc(hwinfo->sensorSize * hwinfo->sensorCount));
 
 				if (*sensors)
-					memcpy(*sensors, (unsigned char*) mapAddress + hwinfo->sensorOffset, hwinfo->sensorSize * hwinfo->sensorCount);
+					memcpy(*sensors, (unsigned char*)mapAddress + hwinfo->sensorOffset, hwinfo->sensorSize * hwinfo->sensorCount);
 				else
 					result = false;
 			}
@@ -335,7 +331,7 @@ bool GetHwinfo(HWINFO_SENSORS_SHARED_MEM2 *hwinfo, void **sensors, void **readin
 
 					if (*readings)
 					{
-						memcpy(*readings, (unsigned char*) mapAddress + hwinfo->readingOffset, hwinfo->readingSize * hwinfo->readingCount);
+						memcpy(*readings, (unsigned char*)mapAddress + hwinfo->readingOffset, hwinfo->readingSize * hwinfo->readingCount);
 					}
 					else
 					{
@@ -356,7 +352,7 @@ bool GetHwinfo(HWINFO_SENSORS_SHARED_MEM2 *hwinfo, void **sensors, void **readin
 	return result;
 }
 
-bool GetGpuz(GPUZ_SH_MEM *gpuz)
+bool GetGpuz(GPUZ_SH_MEM* gpuz)
 {
 	bool result = false;
 
@@ -366,7 +362,7 @@ bool GetGpuz(GPUZ_SH_MEM *gpuz)
 
 	if (mapFile)
 	{
-		void *mapAddress = 0;
+		void* mapAddress = 0;
 
 		LOG(mapAddress = MapViewOfFile(mapFile, FILE_MAP_READ, 0, 0, 0));
 
@@ -386,7 +382,7 @@ bool GetGpuz(GPUZ_SH_MEM *gpuz)
 	return result;
 }
 
-bool GetAfterburner(MAHM_SHARED_MEMORY_HEADER *afterburner, void **entries)
+bool GetAfterburner(MAHM_SHARED_MEMORY_HEADER* afterburner, void** entries)
 {
 	bool result = false;
 
@@ -396,7 +392,7 @@ bool GetAfterburner(MAHM_SHARED_MEMORY_HEADER *afterburner, void **entries)
 
 	if (mapFile)
 	{
-		void *mapAddress = 0;
+		void* mapAddress = 0;
 
 		LOG(mapAddress = MapViewOfFile(mapFile, FILE_MAP_READ, 0, 0, 0));
 
@@ -412,7 +408,7 @@ bool GetAfterburner(MAHM_SHARED_MEMORY_HEADER *afterburner, void **entries)
 				LOG(*entries = malloc(afterburner->entrySize * afterburner->entryCount));
 
 				if (*entries)
-					memcpy(*entries, (unsigned char*) mapAddress + afterburner->headerSize, afterburner->entrySize * afterburner->entryCount);
+					memcpy(*entries, (unsigned char*)mapAddress + afterburner->headerSize, afterburner->entrySize * afterburner->entryCount);
 				else
 					result = false;
 			}
@@ -426,15 +422,15 @@ bool GetAfterburner(MAHM_SHARED_MEMORY_HEADER *afterburner, void **entries)
 	return result;
 }
 
-void ParseParams(const char *buffer)
+void ParseParams(const char* buffer)
 {
 	bool enable = false, disable = false;
 
-	char *start = 0;
+	char* start = 0;
 
-	if ((start = (char*) strstr(buffer, "?enable=")) != 0)
+	if ((start = (char*)strstr(buffer, "?enable=")) != 0)
 		enable = true;
-	else if ((start = (char*) strstr(buffer, "?disable=")) != 0)
+	else if ((start = (char*)strstr(buffer, "?disable=")) != 0)
 		disable = true;
 
 	if (enable)
@@ -450,8 +446,8 @@ void ParseParams(const char *buffer)
 
 	if ((enable) || (disable))
 	{
-		start = (char*) strstr(start, "=");
-		char *end = (char*) strstr(start, " ");
+		start = (char*)strstr(start, "=");
+		char* end = (char*)strstr(start, " ");
 
 		if ((start != 0) && (end != 0))
 		{
@@ -465,7 +461,7 @@ void ParseParams(const char *buffer)
 				if (sensorIndex < EntryTotalCount)
 					EntryEnabled[sensorIndex] = enable ? true : false;
 
-				char *next = (char*) strstr(start, ",");
+				char* next = (char*)strstr(start, ",");
 
 				if (next != 0)
 					*next = 0;
@@ -478,13 +474,13 @@ void ParseParams(const char *buffer)
 	}
 }
 
-size_t CreateJson(char **jsonData)
+size_t CreateJson(char** jsonData)
 {
 	size_t utf8Size = 0;
 
-	wchar_t *json = 0;
+	wchar_t* json = 0;
 
-	LOG(json = (wchar_t*) malloc(1000000 * sizeof(wchar_t)));
+	LOG(json = (wchar_t*)malloc(1000000 * sizeof(wchar_t)));
 
 	if (json)
 	{
@@ -497,64 +493,64 @@ size_t CreateJson(char **jsonData)
 
 		if (Hwinfo)
 		{
-			HWINFO_SENSORS_SHARED_MEM2 hwinfo = {0};
+			HWINFO_SENSORS_SHARED_MEM2 hwinfo = { 0 };
 
-			void *sensors = 0;
-			void *readings = 0;
+			void* sensors = 0;
+			void* readings = 0;
 
 			if (GetHwinfo(&hwinfo, &sensors, &readings))
 			{
 				first_output = false;
 
 				swprintf(json + wcslen(json),
-						 L"\t\"hwinfo\":\n"
-						 L"\t{\n"
-						 L"\t\t\"signature\": %d,\n"
-						 L"\t\t\"version\": %d,\n"
-						 L"\t\t\"revision\": %d,\n"
-						 L"\t\t\"pollTime\": %lld,\n"
-						 L"\t\t\"sensorOffset\": %d,\n"
-						 L"\t\t\"sensorSize\": %d,\n"
-						 L"\t\t\"sensorCount\": %d,\n"
-						 L"\t\t\"readingOffset\": %d,\n"
-						 L"\t\t\"readingSize\": %d,\n"
-						 L"\t\t\"readingCount\": %d,\n"
-						 L"\t\t\"sensors\":\n"
-						 L"\t\t[",
-						 hwinfo.signature,
-						 hwinfo.version,
-						 hwinfo.revision,
-						 hwinfo.pollTime,
-						 hwinfo.sensorOffset,
-						 hwinfo.sensorSize,
-						 hwinfo.sensorCount,
-						 hwinfo.readingOffset,
-						 hwinfo.readingSize,
-						 hwinfo.readingCount);
+					L"\t\"hwinfo\":\n"
+					L"\t{\n"
+					L"\t\t\"signature\": %d,\n"
+					L"\t\t\"version\": %d,\n"
+					L"\t\t\"revision\": %d,\n"
+					L"\t\t\"pollTime\": %lld,\n"
+					L"\t\t\"sensorOffset\": %d,\n"
+					L"\t\t\"sensorSize\": %d,\n"
+					L"\t\t\"sensorCount\": %d,\n"
+					L"\t\t\"readingOffset\": %d,\n"
+					L"\t\t\"readingSize\": %d,\n"
+					L"\t\t\"readingCount\": %d,\n"
+					L"\t\t\"sensors\":\n"
+					L"\t\t[",
+					hwinfo.signature,
+					hwinfo.version,
+					hwinfo.revision,
+					hwinfo.pollTime,
+					hwinfo.sensorOffset,
+					hwinfo.sensorSize,
+					hwinfo.sensorCount,
+					hwinfo.readingOffset,
+					hwinfo.readingSize,
+					hwinfo.readingCount);
 
 				first = true;
 
 				for (unsigned int i = 0; i < hwinfo.sensorCount; ++i)
 				{
-					HWINFO_SENSORS_SENSOR *sensor = (HWINFO_SENSORS_SENSOR*) ((unsigned char*) sensors + hwinfo.sensorSize * i);
+					HWINFO_SENSORS_SENSOR* sensor = (HWINFO_SENSORS_SENSOR*)((unsigned char*)sensors + hwinfo.sensorSize * i);
 
 					if (EntryEnabled[entryIndex])
 					{
 						swprintf(json + wcslen(json),
-								 L"%hs\n"
-								 L"\t\t\t{\n"
-								 L"\t\t\t\t\"entryIndex\": %d,\n"
-								 L"\t\t\t\t\"sensorId\": %u,\n"
-								 L"\t\t\t\t\"sensorInst\": %d,\n"
-								 L"\t\t\t\t\"sensorNameOriginal\": \"%hs\",\n"
-								 L"\t\t\t\t\"sensorNameUser\": \"%hs\"\n"
-								 L"\t\t\t}",
-								 first ? "" : ",",
-								 entryIndex,
-								 sensor->sensorId,
-								 sensor->sensorInst,
-								 FormatSpecialChar(sensor->sensorNameOriginal),
-								 FormatSpecialChar(sensor->sensorNameUser));
+							L"%hs\n"
+							L"\t\t\t{\n"
+							L"\t\t\t\t\"entryIndex\": %d,\n"
+							L"\t\t\t\t\"sensorId\": %u,\n"
+							L"\t\t\t\t\"sensorInst\": %d,\n"
+							L"\t\t\t\t\"sensorNameOriginal\": \"%hs\",\n"
+							L"\t\t\t\t\"sensorNameUser\": \"%hs\"\n"
+							L"\t\t\t}",
+							first ? "" : ",",
+							entryIndex,
+							sensor->sensorId,
+							sensor->sensorInst,
+							FormatSpecialChar(sensor->sensorNameOriginal),
+							FormatSpecialChar(sensor->sensorNameUser));
 
 						first = false;
 					}
@@ -563,46 +559,46 @@ size_t CreateJson(char **jsonData)
 				}
 
 				swprintf(json + wcslen(json),
-						 L"\n"
-						 L"\t\t],\n"
-						 L"\t\t\"readings\":\n"
-						 L"\t\t[");
+					L"\n"
+					L"\t\t],\n"
+					L"\t\t\"readings\":\n"
+					L"\t\t[");
 
 				first = true;
 
 				for (unsigned int i = 0; i < hwinfo.readingCount; ++i)
 				{
-					HWINFO_SENSORS_READING *reading = (HWINFO_SENSORS_READING*) ((unsigned char*) readings + hwinfo.readingSize * i);
+					HWINFO_SENSORS_READING* reading = (HWINFO_SENSORS_READING*)((unsigned char*)readings + hwinfo.readingSize * i);
 
 					if (EntryEnabled[entryIndex])
 					{
 						swprintf(json + wcslen(json),
-								 L"%hs\n"
-								 L"\t\t\t{\n"
-								 L"\t\t\t\t\"entryIndex\": %d,\n"
-								 L"\t\t\t\t\"readingType\": %d,\n"
-								 L"\t\t\t\t\"sensorIndex\": %d,\n"
-								 L"\t\t\t\t\"readingId\": %u,\n"
-								 L"\t\t\t\t\"labelOriginal\": \"%hs\",\n"
-								 L"\t\t\t\t\"labelUser\": \"%hs\",\n"
-								 L"\t\t\t\t\"unit\": \"%hs\",\n"
-								 L"\t\t\t\t\"value\": %lf,\n"
-								 L"\t\t\t\t\"valueMin\": %lf,\n"
-								 L"\t\t\t\t\"valueMax\": %lf,\n"
-								 L"\t\t\t\t\"valueAvg\": %lf\n"
-								 L"\t\t\t}",
-								 first ? "" : ",",
-								 entryIndex,
-								 reading->readingType,
-								 reading->sensorIndex,
-								 reading->readingId,
-								 FormatSpecialChar(reading->labelOriginal),
-								 FormatSpecialChar(reading->labelUser),
-								 FormatSpecialChar(reading->unit),
-								 reading->value,
-								 reading->valueMin,
-								 reading->valueMax,
-								 reading->valueAvg);
+							L"%hs\n"
+							L"\t\t\t{\n"
+							L"\t\t\t\t\"entryIndex\": %d,\n"
+							L"\t\t\t\t\"readingType\": %d,\n"
+							L"\t\t\t\t\"sensorIndex\": %d,\n"
+							L"\t\t\t\t\"readingId\": %u,\n"
+							L"\t\t\t\t\"labelOriginal\": \"%hs\",\n"
+							L"\t\t\t\t\"labelUser\": \"%hs\",\n"
+							L"\t\t\t\t\"unit\": \"%hs\",\n"
+							L"\t\t\t\t\"value\": %lf,\n"
+							L"\t\t\t\t\"valueMin\": %lf,\n"
+							L"\t\t\t\t\"valueMax\": %lf,\n"
+							L"\t\t\t\t\"valueAvg\": %lf\n"
+							L"\t\t\t}",
+							first ? "" : ",",
+							entryIndex,
+							reading->readingType,
+							reading->sensorIndex,
+							reading->readingId,
+							FormatSpecialChar(reading->labelOriginal),
+							FormatSpecialChar(reading->labelUser),
+							FormatSpecialChar(reading->unit),
+							reading->value,
+							reading->valueMin,
+							reading->valueMax,
+							reading->valueAvg);
 
 						first = false;
 					}
@@ -611,9 +607,9 @@ size_t CreateJson(char **jsonData)
 				}
 
 				swprintf(json + wcslen(json),
-						 L"\n"
-						 L"\t\t]\n"
-						 L"\t}");
+					L"\n"
+					L"\t\t]\n"
+					L"\t}");
 
 				free(sensors);
 				free(readings);
@@ -622,7 +618,7 @@ size_t CreateJson(char **jsonData)
 
 		if (Gpuz)
 		{
-			GPUZ_SH_MEM gpuz = {0};
+			GPUZ_SH_MEM gpuz = { 0 };
 
 			if (GetGpuz(&gpuz))
 			{
@@ -632,16 +628,16 @@ size_t CreateJson(char **jsonData)
 					swprintf(json + wcslen(json), L",\n");
 
 				swprintf(json + wcslen(json),
-						 L"\t\"gpuz\":\n"
-						 L"\t{\n"
-						 L"\t\t\"version\": %d,\n"
-						 L"\t\t\"busy\": %d,\n"
-						 L"\t\t\"lastUpdate\": %d,\n"
-						 L"\t\t\"data\":\n"
-						 L"\t\t[",
-						 gpuz.version,
-						 gpuz.busy,
-						 gpuz.lastUpdate);
+					L"\t\"gpuz\":\n"
+					L"\t{\n"
+					L"\t\t\"version\": %d,\n"
+					L"\t\t\"busy\": %d,\n"
+					L"\t\t\"lastUpdate\": %d,\n"
+					L"\t\t\"data\":\n"
+					L"\t\t[",
+					gpuz.version,
+					gpuz.busy,
+					gpuz.lastUpdate);
 
 				first = true;
 
@@ -652,16 +648,16 @@ size_t CreateJson(char **jsonData)
 						if (EntryEnabled[entryIndex])
 						{
 							swprintf(json + wcslen(json),
-									 L"%hs\n"
-									 L"\t\t\t{\n"
-									 L"\t\t\t\t\"entryIndex\": %d,\n"
-									 L"\t\t\t\t\"key\": \"%s\",\n"
-									 L"\t\t\t\t\"value\": \"%s\"\n"
-									 L"\t\t\t}",
-									 first ? "" : ",",
-									 entryIndex,
-									 FormatSpecialCharUnicode(gpuz.data[i].key),
-									 FormatSpecialCharUnicode(gpuz.data[i].value));
+								L"%hs\n"
+								L"\t\t\t{\n"
+								L"\t\t\t\t\"entryIndex\": %d,\n"
+								L"\t\t\t\t\"key\": \"%s\",\n"
+								L"\t\t\t\t\"value\": \"%s\"\n"
+								L"\t\t\t}",
+								first ? "" : ",",
+								entryIndex,
+								FormatSpecialCharUnicode(gpuz.data[i].key),
+								FormatSpecialCharUnicode(gpuz.data[i].value));
 
 							first = false;
 						}
@@ -671,10 +667,10 @@ size_t CreateJson(char **jsonData)
 				}
 
 				swprintf(json + wcslen(json),
-						 L"\n"
-						 L"\t\t],\n"
-						 L"\t\t\"sensors\":\n"
-						 L"\t\t[");
+					L"\n"
+					L"\t\t],\n"
+					L"\t\t\"sensors\":\n"
+					L"\t\t[");
 
 				first = true;
 
@@ -685,20 +681,20 @@ size_t CreateJson(char **jsonData)
 						if (EntryEnabled[entryIndex])
 						{
 							swprintf(json + wcslen(json),
-									 L"%hs\n"
-									 L"\t\t\t{\n"
-									 L"\t\t\t\t\"entryIndex\": %d,\n"
-									 L"\t\t\t\t\"name\": \"%s\",\n"
-									 L"\t\t\t\t\"unit\": \"%s\",\n"
-									 L"\t\t\t\t\"digits\": %d,\n"
-									 L"\t\t\t\t\"value\": %lf\n"
-									 L"\t\t\t}",
-									 first ? "" : ",",
-									 entryIndex,
-									 FormatSpecialCharUnicode(gpuz.sensors[i].name),
-									 FormatSpecialCharUnicode(gpuz.sensors[i].unit),
-									 gpuz.sensors[i].digits,
-									 gpuz.sensors[i].value);
+								L"%hs\n"
+								L"\t\t\t{\n"
+								L"\t\t\t\t\"entryIndex\": %d,\n"
+								L"\t\t\t\t\"name\": \"%s\",\n"
+								L"\t\t\t\t\"unit\": \"%s\",\n"
+								L"\t\t\t\t\"digits\": %d,\n"
+								L"\t\t\t\t\"value\": %lf\n"
+								L"\t\t\t}",
+								first ? "" : ",",
+								entryIndex,
+								FormatSpecialCharUnicode(gpuz.sensors[i].name),
+								FormatSpecialCharUnicode(gpuz.sensors[i].unit),
+								gpuz.sensors[i].digits,
+								gpuz.sensors[i].value);
 
 							first = false;
 						}
@@ -708,17 +704,17 @@ size_t CreateJson(char **jsonData)
 				}
 
 				swprintf(json + wcslen(json),
-						 L"\n"
-						 L"\t\t]\n"
-						 L"\t}");
+					L"\n"
+					L"\t\t]\n"
+					L"\t}");
 			}
 		}
 
 		if (Afterburner)
 		{
-			MAHM_SHARED_MEMORY_HEADER afterburner = {0};
+			MAHM_SHARED_MEMORY_HEADER afterburner = { 0 };
 
-			void *entries = 0;
+			void* entries = 0;
 
 			if (GetAfterburner(&afterburner, &entries))
 			{
@@ -728,28 +724,28 @@ size_t CreateJson(char **jsonData)
 					swprintf(json + wcslen(json), L",\n");
 
 				swprintf(json + wcslen(json),
-						 L"\t\"afterburner\":\n"
-						 L"\t{\n"
-						 L"\t\t\"signature\": %d,\n"
-						 L"\t\t\"version\": %d,\n"
-						 L"\t\t\"headerSize\": %d,\n"
-						 L"\t\t\"entryCount\": %d,\n"
-						 L"\t\t\"entrySize\": %d,\n"
-						 L"\t\t\"time\": %d,\n"
-						 L"\t\t\"entries\":\n"
-						 L"\t\t[",
-						 afterburner.signature,
-						 afterburner.version,
-						 afterburner.headerSize,
-						 afterburner.entryCount,
-						 afterburner.entrySize,
-						 afterburner.time);
+					L"\t\"afterburner\":\n"
+					L"\t{\n"
+					L"\t\t\"signature\": %d,\n"
+					L"\t\t\"version\": %d,\n"
+					L"\t\t\"headerSize\": %d,\n"
+					L"\t\t\"entryCount\": %d,\n"
+					L"\t\t\"entrySize\": %d,\n"
+					L"\t\t\"time\": %d,\n"
+					L"\t\t\"entries\":\n"
+					L"\t\t[",
+					afterburner.signature,
+					afterburner.version,
+					afterburner.headerSize,
+					afterburner.entryCount,
+					afterburner.entrySize,
+					afterburner.time);
 
 				first = true;
 
 				for (unsigned int i = 0; i < afterburner.entryCount; ++i)
 				{
-					MAHM_SHARED_MEMORY_ENTRY *entry = (MAHM_SHARED_MEMORY_ENTRY*) ((unsigned char*) entries + afterburner.entrySize * i);
+					MAHM_SHARED_MEMORY_ENTRY* entry = (MAHM_SHARED_MEMORY_ENTRY*)((unsigned char*)entries + afterburner.entrySize * i);
 
 					if (EntryEnabled[entryIndex])
 					{
@@ -758,30 +754,30 @@ size_t CreateJson(char **jsonData)
 						unsigned int digits = atoi(entry->format + 2);
 
 						swprintf(json + wcslen(json),
-								 L"%hs\n"
-								 L"\t\t\t{\n"
-								 L"\t\t\t\t\"entryIndex\": %d,\n"
-								 L"\t\t\t\t\"name\": \"%hs\",\n"
-								 L"\t\t\t\t\"units\": \"%hs\",\n"
-								 L"\t\t\t\t\"localName\": \"%hs\",\n"
-								 L"\t\t\t\t\"localUnits\": \"%hs\",\n"
-								 L"\t\t\t\t\"digits\": %d,\n"
-								 L"\t\t\t\t\"data\": %f,\n"
-								 L"\t\t\t\t\"minLimit\": %f,\n"
-								 L"\t\t\t\t\"maxLimit\": %f,\n"
-								 L"\t\t\t\t\"flags\": %d\n"
-								 L"\t\t\t}",
-								 first ? "" : ",",
-								 entryIndex,
-								 FormatSpecialChar(entry->name),
-								 FormatSpecialChar(entry->units),
-								 FormatSpecialChar(entry->localName),
-								 FormatSpecialChar(entry->localUnits),
-								 digits,
-								 entry->data,
-								 entry->minLimit,
-								 entry->maxLimit,
-								 entry->flags);
+							L"%hs\n"
+							L"\t\t\t{\n"
+							L"\t\t\t\t\"entryIndex\": %d,\n"
+							L"\t\t\t\t\"name\": \"%hs\",\n"
+							L"\t\t\t\t\"units\": \"%hs\",\n"
+							L"\t\t\t\t\"localName\": \"%hs\",\n"
+							L"\t\t\t\t\"localUnits\": \"%hs\",\n"
+							L"\t\t\t\t\"digits\": %d,\n"
+							L"\t\t\t\t\"data\": %f,\n"
+							L"\t\t\t\t\"minLimit\": %f,\n"
+							L"\t\t\t\t\"maxLimit\": %f,\n"
+							L"\t\t\t\t\"flags\": %d\n"
+							L"\t\t\t}",
+							first ? "" : ",",
+							entryIndex,
+							FormatSpecialChar(entry->name),
+							FormatSpecialChar(entry->units),
+							FormatSpecialChar(entry->localName),
+							FormatSpecialChar(entry->localUnits),
+							digits,
+							entry->data,
+							entry->minLimit,
+							entry->maxLimit,
+							entry->flags);
 
 						first = false;
 					}
@@ -790,9 +786,9 @@ size_t CreateJson(char **jsonData)
 				}
 
 				swprintf(json + wcslen(json),
-						 L"\n"
-						 L"\t\t]\n"
-						 L"\t}");
+					L"\n"
+					L"\t\t]\n"
+					L"\t}");
 
 				free(entries);
 			}
@@ -808,17 +804,17 @@ size_t CreateJson(char **jsonData)
 	return utf8Size;
 }
 
-unsigned long int __stdcall ClientThread(void *parameter)
+unsigned long int __stdcall ClientThread(void* parameter)
 {
-	SOCKET clientSocket = (SOCKET) parameter;
+	SOCKET clientSocket = (SOCKET)parameter;
 
 	int received = 0, sent = 0;
 
 	int bufferSize = 1000000;
 
-	char *buffer = 0;
+	char* buffer = 0;
 
-	LOG(buffer = (char*) malloc(bufferSize * sizeof(char)));
+	LOG(buffer = (char*)malloc(bufferSize * sizeof(char)));
 
 	if (buffer)
 	{
@@ -837,7 +833,7 @@ unsigned long int __stdcall ClientThread(void *parameter)
 			{
 				ParseParams(buffer);
 
-				char *jsonData = 0;
+				char* jsonData = 0;
 
 				size_t jsonSize = CreateJson(&jsonData);
 
@@ -894,7 +890,7 @@ unsigned long int __stdcall ClientThread(void *parameter)
 				printf(HtmlNotFoundHeader, HtmlNotFoundSize);
 			}
 
-			LOG(sent = send(clientSocket, buffer, (int) size, 0));
+			LOG(sent = send(clientSocket, buffer, (int)size, 0));
 		}
 
 		free(buffer);
@@ -907,23 +903,23 @@ unsigned long int __stdcall ClientThread(void *parameter)
 	return sent;
 }
 
-void CreateServer()
+void Hardware::CreateServer()
 {
 	printf("\n");
 
 	LOG(setlocale(LC_CTYPE, ""));
 
-	HtmlIndexSize = LoadFile("index.html", (void**) &HtmlIndexData);
+	HtmlIndexSize = LoadFile("index.html", (void**)&HtmlIndexData);
 
 	if (HtmlIndexSize == 0)
 		HtmlIndexSize = UnicodeToUtf8(HtmlIndexDataDefault, &HtmlIndexData);
 
-	HtmlNotFoundSize = LoadFile("404.html", (void**) &HtmlNotFoundData);
+	HtmlNotFoundSize = LoadFile("404.html", (void**)&HtmlNotFoundData);
 
 	if (HtmlNotFoundSize == 0)
 		HtmlNotFoundSize = UnicodeToUtf8(HtmlNotFoundDataDefault, &HtmlNotFoundData);
 
-	WSADATA wsaData = {0};
+	WSADATA wsaData = { 0 };
 
 	if (LOG(WSAStartup(MAKEWORD(2, 2), &wsaData)) == 0)
 	{
@@ -933,13 +929,13 @@ void CreateServer()
 
 		if (serverSocket != INVALID_SOCKET)
 		{
-			struct sockaddr_in serverAddress = {0};
+			struct sockaddr_in serverAddress = { 0 };
 
 			serverAddress.sin_family = AF_INET;
 			serverAddress.sin_addr.S_un.S_addr = INADDR_ANY;
 			serverAddress.sin_port = htons(Port);
 
-			if (LOG(bind(serverSocket, (sockaddr*) &serverAddress, sizeof(serverAddress))) == 0)
+			if (LOG(bind(serverSocket, (sockaddr*)&serverAddress, sizeof(serverAddress))) == 0)
 			{
 				if (LOG(listen(serverSocket, SOMAXCONN)) == 0)
 				{
@@ -947,13 +943,13 @@ void CreateServer()
 					{
 						SOCKET clientSocket = INVALID_SOCKET;
 
-						LOG(clientSocket = accept(serverSocket, 0, 0));
+						clientSocket = accept(serverSocket, 0, 0);
 
 						if (clientSocket != INVALID_SOCKET)
 						{
 							HANDLE clientThread = 0;
 
-							if (LOG(clientThread = CreateThread(0, 0, ClientThread, (void*) clientSocket, 0, 0)) != 0)
+							if (LOG(clientThread = CreateThread(0, 0, ClientThread, (void*)clientSocket, 0, 0)) != 0)
 								LOG(CloseHandle(clientThread));
 						}
 					}
@@ -992,7 +988,7 @@ void PrintUsage()
 		"http://ip:port/404.html (UTF-8)\n");
 }
 
-void ParseArgs(int argc, char *argv[])
+void ParseArgs(int argc, char* argv[])
 {
 	int arg = 1;
 
@@ -1034,67 +1030,6 @@ void ParseArgs(int argc, char *argv[])
 		++arg;
 	}
 }
-LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-	switch (msg)
-	{
-	case WM_CREATE:
-		break;
-		
-			
-	case WM_MYMESSAGE:
-		switch (lParam)
-		{
-		case WM_LBUTTONDBLCLK:
-			MessageBox(NULL, L"Tray icon double clicked!", L"clicked", MB_OK);
-			break;
-		default:
-			return DefWindowProc(hWnd, msg, wParam, lParam);
-		};
-		break;
-		
-			
-	default:
-		return DefWindowProc(hWnd, msg, wParam, lParam);
-	};
-	return 0;
-}
-//int main(int argc, char *argv[]) gdf
+#pragma once
 
-int main(int argc, char* argv[])
 
-{
-	NOTIFYICONDATA nid;
-
-	HWND handleWindow;
-	AllocConsole();
-	handleWindow = FindWindowA("ConsoleWindowClass", NULL);
-	ShowWindow(handleWindow, 0);
-
-	nid.cbSize = sizeof(NOTIFYICONDATA);
-	nid.hWnd = handleWindow;
-	nid.uID = 100;
-	nid.uVersion = NOTIFYICON_VERSION;
-	nid.uCallbackMessage = WM_MYMESSAGE;
-	nid.hIcon = LoadIcon(NULL, IDI_APPLICATION);
-	wcscpy_s(nid.szTip, L"Tray Icon");
-	nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
-
-	Shell_NotifyIcon(NIM_ADD, &nid);
-
-	if (argc > 1)
-	ParseArgs(argc, argv);
-
-	if ((Hwinfo) || (Gpuz) || (Afterburner))
-	{
-		if (LogFileEnable)
-			LogFile = fopen("log.txt", "a");
-
-		CreateServer();
-
-		if (LogFile)
-			fclose(LogFile);
-	}
-	
-	return EXIT_SUCCESS;
-}
