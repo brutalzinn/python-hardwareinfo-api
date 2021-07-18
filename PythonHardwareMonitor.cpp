@@ -14,7 +14,7 @@ WCHAR szTitle[MAX_LOADSTRING];                  // O texto da barra de título
 WCHAR szWindowClass[MAX_LOADSTRING];            // o nome da classe da janela principal
 
 // Declarações de encaminhamento de funções incluídas nesse módulo de código:
-ATOM                MyRegisterClass(HINSTANCE hInstance);
+                   ATOM MyRegisterClass(HINSTANCE hInstance, int nCmdShow);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
@@ -32,37 +32,19 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     // Inicializar cadeias de caracteres globais
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_PYTHONHARDWAREMONITOR, szWindowClass, MAX_LOADSTRING);
-    MyRegisterClass(hInstance);
+    MyRegisterClass(hInstance, nCmdShow);
 
-    // Realize a inicialização do aplicativo:
-    if (!InitInstance (hInstance, nCmdShow))
-    {
-        return FALSE;
-    }
-  
+   
     std::thread t(&Hardware::CreateServer, Hardware());
 
 
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_PYTHONHARDWAREMONITOR));
 
-    MSG msg;
-
-    // Loop de mensagem principal:
-
-    while (GetMessage(&msg, nullptr, 0, 0))
-    {
-        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
-        {
-
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-    }
 
 
   
 
-    return (int) msg.wParam;
+  /*  return (int) msg.wParam;*/
 }
 
 
@@ -72,9 +54,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 //
 //  FINALIDADE: Registra a classe de janela.
 //
-ATOM MyRegisterClass(HINSTANCE hInstance)
+ATOM MyRegisterClass(HINSTANCE hInstance, int nCmdShow)
 {
     WNDCLASSEXW wcex;
+
+
+    RECT   rectScreen;
+    int    ConsolePosX;
+    int    ConsolePosY;
 
     wcex.cbSize = sizeof(WNDCLASSEX);
 
@@ -90,8 +77,85 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.lpszClassName  = szWindowClass;
     wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
-    return RegisterClassExW(&wcex);
+ 
+    if (!RegisterClassEx(&wcex))
+    {
+        MessageBox(NULL,
+            _T("Call to RegisterClassEx failed!"),
+            _T("Win32 Guided Tour"),
+            NULL);
+
+        return 1;
+    }
+     // Store instance handle in our global variable  
+
+   // The parameters to CreateWindow explained:  
+   // szWindowClass: the name of the application  
+   // szTitle: the text that appears in the title bar  
+   // WS_OVERLAPPEDWINDOW: the type of window to create  
+   // CW_USEDEFAULT, CW_USEDEFAULT: initial position (x, y)  
+   // 500, 100: initial size (width, length)  
+   // NULL: the parent of this window  
+   // NULL: this application does not have a menu bar  
+   // hInstance: the first parameter from WinMain  
+   // NULL: not used in this application  
+
+
+    HWND hWnd = CreateWindow(
+        szWindowClass,
+        szTitle,
+        WS_OVERLAPPEDWINDOW,
+        50, 50,
+        500, 300,
+        NULL,
+        NULL,
+        hInstance,
+        NULL
+    );
+
+
+
+
+
+    if (!hWnd)
+    {
+        MessageBox(NULL,
+            _T("Call to CreateWindow failed!"),
+            _T("Win32 Guided Tour"),
+            NULL);
+
+        return 1;
+    }
+
+    // The parameters to ShowWindow explained:  
+    // hWnd: the value returned from CreateWindow  
+    // nCmdShow: the fourth parameter from WinMain  
+    ShowWindow(hWnd,
+        nCmdShow);
+    UpdateWindow(hWnd);
+
+    
+    MSG msg;
+    while (GetMessage(&msg, NULL, 0, 0))
+    {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+
+
+
+
+
+
+
+
+  
+
 }
+
+
+
+
 
 //
 //   FUNÇÃO: InitInstance(HINSTANCE, int)
