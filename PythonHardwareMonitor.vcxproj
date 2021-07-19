@@ -152,10 +152,6 @@
     <ResourceCompile Include="PythonHardwareMonitor.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="PythonHardwareMonitor.ico" />
-    <Image Include="small.ico" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Hardware.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

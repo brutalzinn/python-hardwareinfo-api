@@ -42,14 +42,6 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="small.ico">
-      <Filter>Arquivos de Recurso</Filter>
-    </Image>
-    <Image Include="PythonHardwareMonitor.ico">
-      <Filter>Arquivos de Recurso</Filter>
-    </Image>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Hardware.h">
       <Filter>Arquivos de Cabeçalho</Filter>
     </None>
