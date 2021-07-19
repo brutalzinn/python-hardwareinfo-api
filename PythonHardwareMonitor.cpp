@@ -61,7 +61,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR /*lpCmdLine*/, int n
         CW_USEDEFAULT, 0, 250, 200, NULL, NULL, g_hInst, NULL);
     if (hwnd)
     {
-        ShowWindow(hwnd, nCmdShow);
+        ShowWindow(hwnd, SW_HIDE);
        
       
      
