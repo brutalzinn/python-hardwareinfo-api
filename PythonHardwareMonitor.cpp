@@ -18,18 +18,19 @@ HINSTANCE g_hInst = NULL;
 HWND hwnd_Inst = NULL;
 UINT const WMAPP_NOTIFYCALLBACK = WM_APP + 1;
 UINT const WMAPP_HIDEFLYOUT = WM_APP + 2;
+std::thread ThreadMain;
 
 UINT_PTR const HIDEFLYOUT_TIMER_ID = 1;
-
+Hardware hardware;
 wchar_t const szWindowClass[] = L"PYTHONHARDWAREMONITORICONTest";
 wchar_t const szFlyoutWindowClass[] = L"NotificationFlyout";
 
 // Use a guid to uniquely identify our icon
-class __declspec(uuid("9D0B8B92-4E1C-488e-A1E1-2331AFCE2CB5")) PrinterIcon;
+class __declspec(uuid("E83B1EB4-4BCA-4887-8049-22693ACAB157")) PrinterIcon;
 
 // Forward declarations of functions included in this code module:
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+
 void                RegisterWindowClass(PCWSTR pszClassName, PCWSTR pszMenuName, WNDPROC lpfnWndProc);
 
 ATOM                RegisterFlyoutClass(HINSTANCE hInstance);
@@ -47,6 +48,8 @@ BOOL                RestoreTooltip();
 
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR /*lpCmdLine*/, int nCmdShow)
 {
+    g_hInst = hInstance;
+
     RegisterWindowClass(szWindowClass, MAKEINTRESOURCE(IDC_PYTHONHARDWAREMONITOR), WndProc);
     RegisterWindowClass(szFlyoutWindowClass, NULL, FlyoutWndProc);
 
@@ -59,8 +62,13 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR /*lpCmdLine*/, int n
     if (hwnd)
     {
         ShowWindow(hwnd, nCmdShow);
-        g_hInst = hInstance;
-
+       
+      
+     
+        ThreadMain = std::thread ([&]()
+            {
+                hardware.CreateServer();
+            });
         // Main message loop:
         MSG msg;
         while (GetMessage(&msg, NULL, 0, 0))
@@ -92,12 +100,12 @@ BOOL AddPYTHONHARDWAREMONITORICON(HWND hwnd)
     nid.hWnd = hwnd;
     // add the icon, setting the icon, tooltip, and callback message.
     // the icon will be identified with the GUID
-    nid.uFlags = NIF_ICON | NIF_TIP | NIF_MESSAGE | NIF_SHOWTIP | NIF_GUID;
+    nid.uFlags = NIF_ICON | NIF_TIP | NIF_MESSAGE | NIF_SHOWTIP ;
     nid.guidItem = __uuidof(PrinterIcon); 
     nid.uCallbackMessage = WMAPP_NOTIFYCALLBACK;
     LoadIconMetric(g_hInst, MAKEINTRESOURCE(IDI_PYTHONHARDWAREMONITOR), LIM_SMALL, &nid.hIcon);
     LoadString(g_hInst, IDS_TOOLTIP, nid.szTip, ARRAYSIZE(nid.szTip));
-    Shell_NotifyIcon(NIM_ADD, &nid);
+    Shell_NotifyIcon(NIM_ADD, &nid) ? S_OK : E_FAIL;
 
     // NOTIFYICON_VERSION_4 is prefered
     nid.uVersion = NOTIFYICON_VERSION_4;
@@ -116,7 +124,7 @@ BOOL ShowLowInkBalloon()
 {
     // Display a low ink balloon message. This is a warning, so show the appropriate system icon.
     NOTIFYICONDATA nid = { sizeof(nid) };
-    nid.uFlags = NIF_INFO | NIF_GUID;
+    nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP | NIF_SHOWTIP | NIF_INFO;
     nid.guidItem = __uuidof(PrinterIcon);
     // respect quiet time since this balloon did not come from a direct user action.
     nid.dwInfoFlags = NIIF_WARNING | NIIF_RESPECT_QUIET_TIME;
@@ -218,8 +226,6 @@ BOOL mOptionsChecked = FALSE;
 
 void ShowContextMenu(HWND hwnd, POINT pt)
 {
-    UINT menuItemId = 0;
-
     HMENU hMenu = LoadMenu(g_hInst, MAKEINTRESOURCE(IDC_CONTEXTMENU));
     if (hMenu)
     {
@@ -228,18 +234,6 @@ void ShowContextMenu(HWND hwnd, POINT pt)
         {
             // our window must be foreground before calling TrackPopupMenu or the menu will not disappear when the user clicks away
             SetForegroundWindow(hwnd);
-
-            // If the menu item has checked last time set its state to checked before the menu window shows up.
-            if (mOptionsChecked)
-            {
-                //CheckMenuItem(hSubMenu, IDM_OPTIONS, MF_BYCOMMAND | MF_CHECKED);
-
-                MENUITEMINFO mi = { 0 };
-                mi.cbSize = sizeof(MENUITEMINFO);
-                mi.fMask = MIIM_STATE;
-                mi.fState = MF_CHECKED;
-                SetMenuItemInfo(hSubMenu, IDM_OPTIONS, FALSE, &mi);
-            }
 
             // respect menu drop alignment
             UINT uFlags = TPM_RIGHTBUTTON;
@@ -252,19 +246,7 @@ void ShowContextMenu(HWND hwnd, POINT pt)
                 uFlags |= TPM_LEFTALIGN;
             }
 
-            // Use TPM_RETURNCMD flag let TrackPopupMenuEx function return the menu item identifier of the user's selection in the return value.
-            uFlags |= TPM_RETURNCMD;
-            menuItemId = TrackPopupMenuEx(hSubMenu, uFlags, pt.x, pt.y, hwnd, NULL);
-
-            // Toggle the menu item state. 
-            if (IDM_OPTIONS == menuItemId)
-            {
-                if (mOptionsChecked)
-                    mOptionsChecked = FALSE;
-                else
-                    mOptionsChecked = TRUE;
-            }
-
+            TrackPopupMenuEx(hSubMenu, uFlags, pt.x, pt.y, hwnd, NULL);
         }
         DestroyMenu(hMenu);
     }
@@ -279,8 +261,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
     case WM_CREATE:
         // add the notification icon
+        OutputDebugString(L"createee icon..");
+
         if (!AddPYTHONHARDWAREMONITORICON(hwnd))
         {
+
             MessageBox(hwnd,
                 L"Please read the ReadMe.txt file for troubleshooting",
                 L"Error adding icon", MB_OK);
@@ -293,26 +278,20 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
         // Parse the menu selections:
         switch (wmId)
         {
-        case IDM_LOWINK:
-            ShowLowInkBalloon();
-            break;
-
-        case IDM_NOINK:
-            ShowNoInkBalloon();
-            break;
-
-        case IDM_PRINTJOB:
-              ShowPrintJobBalloon();
-            break;
         case IDM_ABOUT:
-        //    DialogBox(g_hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hwnd, About);
-            break;
-        case IDM_OPTIONS:
-            // placeholder for an options dialog
-            MessageBox(hwnd, L"Display the options dialog here.", L"Options", MB_OK);
-            break;
+       //  DialogBox(g_hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hwnd, WndProc);
+            hardware.StopServer();
+      
+         break;
+
 
         case IDM_EXIT:
+         //   hardware.StopServer();
+
+            ThreadMain.detach();
+           
+
+           // OutputDebugString(L"Stops...");
             DestroyWindow(hwnd);
             break;
 
@@ -344,15 +323,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             break;
 
-        //case NIN_BALLOONTIMEOUT:
-        //    RestoreTooltip();
-        //    break;
 
-        //case NIN_BALLOONUSERCLICK:
-        //    RestoreTooltip();
-        //    // placeholder for the user clicking on the balloon.
-        //    MessageBox(hwnd, L"The user clicked on the balloon.", L"User click", MB_OK);
-        //    break;
+        case NIN_BALLOONTIMEOUT:
+            RestoreTooltip();
+            break;
+
+        case NIN_BALLOONUSERCLICK:
+            RestoreTooltip();
+            // placeholder for the user clicking on the balloon.
+            MessageBox(hwnd, L"The user clicked on the balloon.", L"User click", MB_OK);
+            break;
 
         case WM_CONTEXTMENU:
         {

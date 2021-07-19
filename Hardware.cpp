@@ -10,6 +10,7 @@
 #include <time.h>
 #include <locale.h>
 #include "Hardware.h"
+#include <thread>
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -160,7 +161,8 @@ unsigned int Port = 60000;
 
 bool Hwinfo = true, Gpuz = true, Afterburner = true;
 bool LogFileEnable = true;
-
+bool stopServer = false;
+SOCKET serverSocket;
 #define LOG(expression) Log(#expression, strrchr(__FILE__, '\\') + 1, __LINE__, (intptr_t) (expression))
 
 FILE* LogFile = 0;
@@ -902,11 +904,15 @@ unsigned long int __stdcall ClientThread(void* parameter)
 
 	return sent;
 }
-
+void Hardware::StopServer()
+{
+	shutdown(serverSocket, SD_BOTH);
+	closesocket(serverSocket);
+	WSACleanup();
+}
 void Hardware::CreateServer()
 {
 	printf("\n");
-
 	LOG(setlocale(LC_CTYPE, ""));
 
 	HtmlIndexSize = LoadFile("index.html", (void**)&HtmlIndexData);
@@ -923,10 +929,10 @@ void Hardware::CreateServer()
 
 	if (LOG(WSAStartup(MAKEWORD(2, 2), &wsaData)) == 0)
 	{
-		SOCKET serverSocket = INVALID_SOCKET;
+		serverSocket = INVALID_SOCKET;
 
-		LOG(serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP));
-
+		serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+		
 		if (serverSocket != INVALID_SOCKET)
 		{
 			struct sockaddr_in serverAddress = { 0 };
@@ -934,7 +940,6 @@ void Hardware::CreateServer()
 			serverAddress.sin_family = AF_INET;
 			serverAddress.sin_addr.S_un.S_addr = INADDR_ANY;
 			serverAddress.sin_port = htons(Port);
-
 			if (LOG(bind(serverSocket, (sockaddr*)&serverAddress, sizeof(serverAddress))) == 0)
 			{
 				if (LOG(listen(serverSocket, SOMAXCONN)) == 0)
@@ -948,10 +953,14 @@ void Hardware::CreateServer()
 						if (clientSocket != INVALID_SOCKET)
 						{
 							HANDLE clientThread = 0;
-
+						
 							if (LOG(clientThread = CreateThread(0, 0, ClientThread, (void*)clientSocket, 0, 0)) != 0)
+								OutputDebugString(L"socket em execução...");
 								LOG(CloseHandle(clientThread));
+
+						
 						}
+						
 					}
 				}
 			}

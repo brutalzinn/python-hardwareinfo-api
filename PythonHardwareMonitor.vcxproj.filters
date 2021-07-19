@@ -27,6 +27,9 @@
     <ClInclude Include="PythonHardwareMonitor.h">
       <Filter>Arquivos de Cabeçalho</Filter>
     </ClInclude>
+    <ClInclude Include="ThreadSignal.h">
+      <Filter>Arquivos de Cabeçalho</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="PythonHardwareMonitor.cpp">
@@ -40,15 +43,13 @@
     <ResourceCompile Include="PythonHardwareMonitor.rc">
       <Filter>Arquivos de Recurso</Filter>
     </ResourceCompile>
+    <ResourceCompile Include="NotificationIcon.ico">
+      <Filter>Arquivos de Recurso</Filter>
+    </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Hardware.h">
       <Filter>Arquivos de Cabeçalho</Filter>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="NotificationIcon.ico">
-      <Filter>Arquivos de Recurso</Filter>
-    </Image>
   </ItemGroup>
 </Project>

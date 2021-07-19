@@ -143,6 +143,7 @@
     <ClInclude Include="PythonHardwareMonitor.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="ThreadSignal.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Hardware.cpp" />
@@ -155,7 +156,7 @@
     <None Include="Hardware.h" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="NotificationIcon.ico" />
+    <ResourceCompile Include="NotificationIcon.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
