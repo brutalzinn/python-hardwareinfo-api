@@ -1,5 +1,7 @@
 
-# This is a clone of [RemoteHWInfo](https://github.com/Demion/remotehwinfo)
+# Python Hardware Info Api
+
+## This is a clone of [RemoteHWInfo](https://github.com/Demion/remotehwinfo)
 
 # Description 
 
