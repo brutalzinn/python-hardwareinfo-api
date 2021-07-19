@@ -46,4 +46,9 @@
       <Filter>Arquivos de Cabeçalho</Filter>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="NotificationIcon.ico">
+      <Filter>Arquivos de Recurso</Filter>
+    </Image>
+  </ItemGroup>
 </Project>

@@ -47,7 +47,7 @@ BOOL                RestoreTooltip();
 
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR /*lpCmdLine*/, int nCmdShow)
 {
-    RegisterWindowClass(szWindowClass, MAKEINTRESOURCE(IDC_PYTHONHARDWAREMONITORICON), WndProc);
+    RegisterWindowClass(szWindowClass, MAKEINTRESOURCE(IDC_PYTHONHARDWAREMONITOR), WndProc);
     RegisterWindowClass(szFlyoutWindowClass, NULL, FlyoutWndProc);
 
     // Create the main window. This could be a hidden window if you don't need
@@ -78,7 +78,7 @@ void RegisterWindowClass(PCWSTR pszClassName, PCWSTR pszMenuName, WNDPROC lpfnWn
     wcex.style = CS_HREDRAW | CS_VREDRAW;
     wcex.lpfnWndProc = lpfnWndProc;
     wcex.hInstance = g_hInst;
-    wcex.hIcon = LoadIcon(g_hInst, MAKEINTRESOURCE(IDI_PYTHONHARDWAREMONITORICON));
+    wcex.hIcon = LoadIcon(g_hInst, MAKEINTRESOURCE(IDI_PYTHONHARDWAREMONITOR));
     wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
     wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
     wcex.lpszMenuName = pszMenuName;
@@ -95,7 +95,7 @@ BOOL AddPYTHONHARDWAREMONITORICON(HWND hwnd)
     nid.uFlags = NIF_ICON | NIF_TIP | NIF_MESSAGE | NIF_SHOWTIP | NIF_GUID;
     nid.guidItem = __uuidof(PrinterIcon); 
     nid.uCallbackMessage = WMAPP_NOTIFYCALLBACK;
-    LoadIconMetric(g_hInst, MAKEINTRESOURCE(IDI_PYTHONHARDWAREMONITORICON), LIM_SMALL, &nid.hIcon);
+    LoadIconMetric(g_hInst, MAKEINTRESOURCE(IDI_PYTHONHARDWAREMONITOR), LIM_SMALL, &nid.hIcon);
     LoadString(g_hInst, IDS_TOOLTIP, nid.szTip, ARRAYSIZE(nid.szTip));
     Shell_NotifyIcon(NIM_ADD, &nid);
 
@@ -146,7 +146,7 @@ BOOL ShowPrintJobBalloon()
     nid.dwInfoFlags = NIIF_USER | NIIF_LARGE_ICON;
     LoadString(g_hInst, IDS_PRINTJOB_TITLE, nid.szInfoTitle, ARRAYSIZE(nid.szInfoTitle));
     LoadString(g_hInst, IDS_PRINTJOB_TEXT, nid.szInfo, ARRAYSIZE(nid.szInfo));
-    LoadIconMetric(g_hInst, MAKEINTRESOURCE(IDI_PYTHONHARDWAREMONITORICON), LIM_LARGE, &nid.hBalloonIcon);
+    LoadIconMetric(g_hInst, MAKEINTRESOURCE(IDI_PYTHONHARDWAREMONITOR), LIM_LARGE, &nid.hBalloonIcon);
     return Shell_NotifyIcon(NIM_MODIFY, &nid);
 }
 
@@ -397,7 +397,7 @@ void FlyoutPaint(HWND hwnd, HDC hdc)
     static HBITMAP hbmp = NULL;
     if (hbmp == NULL)
     {
-        hbmp = (HBITMAP)LoadImage(g_hInst, MAKEINTRESOURCE(IDC_PYTHONHARDWAREMONITORICON), IMAGE_BITMAP, 0, 0, 0);
+        hbmp = (HBITMAP)LoadImage(g_hInst, MAKEINTRESOURCE(IDC_PYTHONHARDWAREMONITOR), IMAGE_BITMAP, 0, 0, 0);
     }
     if (hbmp)
     {
