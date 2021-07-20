@@ -1,26 +1,26 @@
-#define _CRT_SECURE_NO_WARNINGS
+﻿#define _CRT_SECURE_NO_WARNINGS
 #define _CRT_NONSTDC_NO_WARNINGS
 #define _CRT_NON_CONFORMING_SWPRINTFS
-#define MY_PRINTF(...) {char cad[512]; sprintf(cad, __VA_ARGS__);  OutputDebugString(cad);}
+
 #include <Winsock2.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include <time.h>
 #include <locale.h>
 #include "Hardware.h"
 #include <thread>
-#include "websocket/server_ws.hpp"
-using namespace std;
-using WsServer = SimpleWeb::SocketServer<SimpleWeb::WS>;
-
-
-#pragma comment(lib, "ws2_32.lib")
-
-#pragma pack(push, 1)
 #if defined(__linux__)
 #  include <unistd.h>
 #elif defined(_WIN32)
-#  include <Windows.h>
+#include <Windows.h>
+
 #  define sleep(s) Sleep((s)*1000)
 #endif
+#pragma comment(lib, "ws2_32.lib")
+
+#pragma pack(push, 1)
+
 
 struct HWINFO_SENSORS_READING
 {
@@ -811,194 +811,126 @@ size_t CreateJson(char** jsonData)
 	return utf8Size;
 }
 
-void ClientThread()
+unsigned long int __stdcall ClientThread(void* parameter)
 {
+	SOCKET clientSocket = (SOCKET)parameter;
 
 	int received = 0, sent = 0;
 
 	int bufferSize = 1000000;
 
 	char* buffer = 0;
+	while (true) {
+		LOG(buffer = (char*)malloc(bufferSize * sizeof(char)));
 
-	LOG(buffer = (char*)malloc(bufferSize * sizeof(char)));
+		LOG(received = recv(clientSocket, buffer, bufferSize, 0));
 
-	if (buffer)
-	{
-		/*LOG(received = recv(clientSocket, buffer, bufferSize, 0));
 
-		if (received > 0)
+		buffer[received] = 0;
+
+		printf(buffer);
+
+		size_t size = 0;
+
+
+		ParseParams(buffer);
+
+		char* jsonData = 0;
+
+		size_t jsonSize = CreateJson(&jsonData);
+
+		printf(buffer, jsonSize);
+
+		size = strlen(buffer);
+
+		if (jsonSize > 0)
 		{
-			buffer[received] = 0;
+			memcpy(buffer + size, jsonData, jsonSize);
 
-			printf(buffer);
+			free(jsonData);
 
-			size_t size = 0;
+			size += jsonSize;
+		}
 
-			if ((strstr(buffer, "GET /json ") != 0) || (strstr(buffer, "GET /json?") != 0) ||
-				(strstr(buffer, "GET /json.json ") != 0) || (strstr(buffer, "GET /json.json?") != 0))
-			{
-				ParseParams(buffer);
+		buffer[size] = 0;
 
-				char* jsonData = 0;
-
-				size_t jsonSize = CreateJson(&jsonData);
-
-				sprintf(buffer, JsonHeader, jsonSize);
-
-				size = strlen(buffer);
-
-				if (jsonSize > 0)
-				{
-					memcpy(buffer + size, jsonData, jsonSize);
-
-					free(jsonData);
-
-					size += jsonSize;
-				}
-
-				buffer[size] = 0;
-
-				printf(JsonHeader, jsonSize);
-			}
-			else if ((strstr(buffer, "GET / ") != 0) || (strstr(buffer, "GET /?") != 0) ||
-				(strstr(buffer, "GET /index.html ") != 0) || (strstr(buffer, "GET /index.html?") != 0))
-			{
-				sprintf(buffer, HtmlIndexHeader, HtmlIndexSize);
-
-				size = strlen(buffer);
-
-				if (HtmlIndexSize > 0)
-				{
-					memcpy(buffer + size, HtmlIndexData, HtmlIndexSize);
-
-					size += HtmlIndexSize;
-				}
-
-				buffer[size] = 0;
-
-				printf(HtmlIndexHeader, HtmlIndexSize);
-			}
-			else
-			{
-				sprintf(buffer, HtmlNotFoundHeader, HtmlNotFoundSize);
-
-				size = strlen(buffer);
-
-				if (HtmlNotFoundSize > 0)
-				{
-					memcpy(buffer + size, HtmlNotFoundData, HtmlNotFoundSize);
-
-					size += HtmlNotFoundSize;
-				}
-
-				buffer[size] = 0;
-
-				printf(HtmlNotFoundHeader, HtmlNotFoundSize);
-			}
-
-			LOG(sent = send(clientSocket, buffer, (int)size, 0));
-		}*/
+		printf(buffer, jsonSize);
 
 
 
 
+		LOG(sent = send(clientSocket, buffer, (int)size, 0));
+		Sleep(1);
 
-			buffer[received] = 0;
-
-			printf(buffer);
-
-			size_t size = 0;
-
-	
-			ParseParams(buffer);
-
-			char* jsonData = 0;
-
-			size_t jsonSize = CreateJson(&jsonData);
-
-			sprintf(buffer, JsonHeader, jsonSize);
-
-			size = strlen(buffer);
-
-
-			if (jsonSize > 0)
-			{
-				memcpy(buffer + size, jsonData, jsonSize);
-				OutputDebugStringA(jsonData);
-
-				//free(jsonData);
-
-				size += jsonSize;
-
-			}
-			buffer[size] = 0;
-
-			printf(JsonHeader, jsonSize);
-
-
-
-
-
-			//LOG(shutdown(clientSocket, SD_BOTH));
-
-			//LOG(closesocket(clientSocket));
-		
-
-		
+		free(buffer);
 	}
-}
 
+		
+	
+
+
+
+	return sent;
+}
 void Hardware::StopServer()
 {
 	shutdown(serverSocket, SD_BOTH);
 	closesocket(serverSocket);
 	WSACleanup();
 }
-
 void Hardware::CreateServer()
 {
-	WsServer server;
-	server.config.port = 8080;
-	server.endpoint["^/echo/?$"];
-	
-
-	echo.on_message = [](shared_ptr<WsServer::Connection> connection, shared_ptr<WsServer::Message> message) {
-		auto message_str = message->string();
-		auto send_stream = make_shared<WsServer::SendStream>();
-		*send_stream << message_str;
-		// connection->send is an asynchronous function
-		connection->send(send_stream, [](const SimpleWeb::error_code& ec) {
-			if (ec) {
-				cout << "Server: Error sending message. " <<
-					// See http://www.boost.org/doc/libs/1_55_0/doc/html/boost_asio/reference.html, Error Codes for error code meanings
-					"Error: " << ec << ", error message: " << ec.message() << endl;
-			}
-			});
-	};
-
-	echo.on_open = [](shared_ptr<WsServer::Connection> connection) {
-		cout << "Server: Opened connection " << connection.get() << endl;
-	};
-
-	// See RFC 6455 7.4.1. for status codes
-	echo.on_close = [](shared_ptr<WsServer::Connection> connection, int status, const string& /*reason*/) {
-		cout << "Server: Closed connection " << connection.get() << " with status code " << status << endl;
-	};
-
-	// See http://www.boost.org/doc/libs/1_55_0/doc/html/boost_asio/reference.html, Error Codes for error code meanings
-	echo.on_error = [](shared_ptr<WsServer::Connection> connection, const SimpleWeb::error_code& ec) {
-		cout << "Server: Error in connection " << connection.get() << ". "
-			<< "Error: " << ec << ", error message: " << ec.message() << endl;
-	};
+	printf("\n");
 
 
-				/*	while (true)
+	WSADATA wsaData = { 0 };
+
+	if (LOG(WSAStartup(MAKEWORD(2, 2), &wsaData)) == 0)
+	{
+		serverSocket = INVALID_SOCKET;
+
+		serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+		if (serverSocket != INVALID_SOCKET)
+		{
+			struct sockaddr_in serverAddress = { 0 };
+
+			serverAddress.sin_family = AF_INET;
+			serverAddress.sin_addr.S_un.S_addr = INADDR_ANY;
+			serverAddress.sin_port = htons(Port);
+			if (LOG(bind(serverSocket, (sockaddr*)&serverAddress, sizeof(serverAddress))) == 0)
+			{
+				if (LOG(listen(serverSocket, SOMAXCONN)) == 0)
+				{
+				
+					while (true)
 					{
-						ClientThread();
-						Sleep(1);
-					}*/
+						SOCKET clientSocket = INVALID_SOCKET;
+
+						clientSocket = accept(serverSocket, 0, 0);
+
+						if (clientSocket != INVALID_SOCKET)
+						{
+							HANDLE clientThread = 0;
+
+							if (LOG(clientThread = CreateThread(0, 0, ClientThread, (void*)clientSocket, 0, 0)) != 0)
+							OutputDebugString(L"socket em execu��o...");
+							//LOG(CloseHandle(clientThread));
 
 
+						}
+
+					}
+				}
+			}
+
+		//	LOG(closesocket(serverSocket));
+		}
+
+	//	LOG(WSACleanup());
+	}
+
+	
 }
 
 void PrintUsage()
@@ -1063,5 +995,4 @@ void ParseArgs(int argc, char* argv[])
 	}
 }
 #pragma once
-
 
