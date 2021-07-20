@@ -9,7 +9,14 @@
 #include <time.h>
 #include <locale.h>
 #include "Hardware.h"
+#include <chrono>
 #include <thread>
+#include <iostream>
+#include <WS2tcpip.h>
+#include <string>
+#include <sstream>
+#include <fcntl.h>
+
 #if defined(__linux__)
 #  include <unistd.h>
 #elif defined(_WIN32)
@@ -20,6 +27,7 @@
 #pragma comment(lib, "ws2_32.lib")
 
 #pragma pack(push, 1)
+using namespace std;
 
 
 struct HWINFO_SENSORS_READING
@@ -810,64 +818,80 @@ size_t CreateJson(char** jsonData)
 
 	return utf8Size;
 }
+using namespace std::chrono_literals;
 
 unsigned long int __stdcall ClientThread(void* parameter)
 {
-	SOCKET clientSocket = (SOCKET)parameter;
-
-	int received = 0, sent = 0;
-
-	int bufferSize = 1000000;
-	while (true) {
-	char* buffer = 0;
+		SOCKET clientSocket = (SOCKET)parameter;
 	
-		LOG(buffer = (char*)malloc(bufferSize * sizeof(char)));
+		int received = 0, sent = 0;
+		int bufferSize = 1000000;
 
-	//	LOG(received = recv(clientSocket, buffer, bufferSize, 0));
+		char* buffer = 0;
+		while (true) {
+			
+
+			
+
+			LOG(buffer = (char*)malloc(bufferSize * sizeof(char)));
 
 
-		buffer[received] = 0;
+			if (buffer)
+			{
 
-		printf(buffer);
+				buffer[received] = 0;
 
-		size_t size = 0;
+				printf(buffer);
+
+				size_t size = 0;
+				//LOG(received = recv(clientSocket, buffer, bufferSize, 0));
+
+				ParseParams(buffer);
+
+				char* jsonData = 0;
+
+				size_t jsonSize = CreateJson(&jsonData);
+
+				printf(buffer, jsonSize);
+
+				size = strlen(buffer);
+
+				if (jsonSize > 0)
+				{
+					memcpy(buffer + size, jsonData, jsonSize);
+
+					free(jsonData);
+
+					size += jsonSize;
+				}
+
+				buffer[size] = 0;
+
+				buffer[size] = 0;
+
+				printf(JsonHeader, jsonSize);
 
 
-		ParseParams(buffer);
 
-		char* jsonData = 0;
 
-		size_t jsonSize = CreateJson(&jsonData);
+				LOG(sent = send(clientSocket, buffer, (int)size, 0));
+				//Sleep(1000);
 
-		printf(buffer, jsonSize);
+				free(buffer);
 
-		size = strlen(buffer);
-
-		if (jsonSize > 0)
-		{
-			memcpy(buffer + size, jsonData, jsonSize);
-
-			free(jsonData);
-
-			size += jsonSize;
+				//return sent;
+			}
+			Sleep(500);
+		//return sent;
 		}
 
-		buffer[size] = 0;
 
-		printf(buffer, jsonSize);
+	//	LOG(shutdown(clientSocket, SD_BOTH));
 
+		//LOG(closesocket(clientSocket));
 
-
-
-		LOG(sent = send(clientSocket, buffer, (int)size, 0));
-		Sleep(10);
-
-	//	free(buffer);
-	}
-
-		
+		return sent;
 	
-	//return sent;
 }
 void Hardware::StopServer()
 {
@@ -877,7 +901,8 @@ void Hardware::StopServer()
 }
 void Hardware::CreateServer()
 {
-	printf("\n");
+	/*printf("\n");
+	LOG(setlocale(LC_CTYPE, ""));
 
 
 	WSADATA wsaData = { 0 };
@@ -886,7 +911,7 @@ void Hardware::CreateServer()
 	{
 		serverSocket = INVALID_SOCKET;
 
-		serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+		serverSocket = socket(AF_INET, SOCK_STREAM, 0);
 
 		if (serverSocket != INVALID_SOCKET)
 		{
@@ -911,8 +936,7 @@ void Hardware::CreateServer()
 							HANDLE clientThread = 0;
 
 							if (LOG(clientThread = CreateThread(0, 0, ClientThread, (void*)clientSocket, 0, 0)) != 0)
-							OutputDebugString(L"socket em execu��o...");
-							//LOG(CloseHandle(clientThread));
+									LOG(CloseHandle(clientThread));
 
 
 						}
@@ -921,11 +945,192 @@ void Hardware::CreateServer()
 				}
 			}
 
-		//	LOG(closesocket(serverSocket));
+			LOG(closesocket(serverSocket));
 		}
 
-	//	LOG(WSACleanup());
+		LOG(WSACleanup());
 	}
+	if (HtmlIndexData)
+		free(HtmlIndexData);
+
+	if (HtmlNotFoundData)
+		free(HtmlNotFoundData);*/
+
+	WSADATA wsData;
+	WORD ver = MAKEWORD(2, 2);
+
+	int wsOk = WSAStartup(ver, &wsData);
+	if (wsOk != 0)
+	{
+		cerr << "Can't Initialize winsock! Quitting" << endl;
+		return;
+	}
+
+	// Create a socket
+	SOCKET listening = socket(AF_INET, SOCK_STREAM, 0);
+
+	if (listening == INVALID_SOCKET)
+	{
+		cerr << "Can't create a socket! Quitting" << endl;
+		return;
+	}
+
+	// Bind the ip address and port to a socket
+	sockaddr_in hint;
+	hint.sin_family = AF_INET;
+	hint.sin_port = htons(Port);
+	hint.sin_addr.S_un.S_addr = INADDR_ANY; // Could also use inet_pton .... 
+	fd_set master;    // master file descriptor list
+	fd_set read_fds;  // temp file descriptor list for select() read
+	fd_set write_fds; // temp file descriptor list for select() read
+	bind(listening, (sockaddr*)&hint, sizeof(hint));
+
+	// Tell Winsock the socket is for listening 
+	listen(listening, SOMAXCONN);
+
+	// Create the master file descriptor set and zero it
+	//fd_set master;
+	FD_ZERO(&master);    // clear the master and temp sets
+	FD_ZERO(&read_fds);
+	FD_ZERO(&write_fds);
+
+	//FD_ZERO(&master);
+
+
+	// Add our first socket that we're interested in interacting with; the listening socket!
+	// It's important that this socket is added for our server or else we won't 'hear' incoming
+	// connections 
+	FD_SET(listening, &master);
+
+	// this will be changed by the \quit command (see below, bonus not in video!)
+	bool running = true;
+	int bufferSize = 1024 * 1024;
+	int received = 0, sent = 0;
+
+	while (running)
+	{
+		// Make a copy of the master file descriptor set, this is SUPER important because
+		// the call to select() is _DESTRUCTIVE_. The copy only contains the sockets that
+		// are accepting inbound connection requests OR messages. 
+
+		// E.g. You have a server and it's master file descriptor set contains 5 items;
+		// the listening socket and four clients. When you pass this set into select(), 
+		// only the sockets that are interacting with the server are returned. Let's say
+		// only one client is sending a message at that time. The contents of 'copy' will
+		// be one socket. You will have LOST all the other sockets.
+
+		// SO MAKE A COPY OF THE MASTER LIST TO PASS INTO select() !!!
+
+		fd_set copy = master;
+
+		// See who's talking to us
+		struct timeval tv;
+		tv.tv_sec = 5;
+		tv.tv_usec = 0;
+		int socketCount = select(0, &copy, &copy, nullptr, &tv);//select(0, &copy, nullptr, nullptr, nullptr);
+
+	
+		// Loop through all the current connections / potential connect
+		for (int i = 0; i < socketCount; i++)
+		{
+
+			// Makes things easy for us doing this assignment
+			SOCKET sock = copy.fd_array[i];
+
+			// Is it an inbound communication?
+			if (sock == listening)
+			{
+				// Accept a new connection
+				SOCKET client = accept(listening, nullptr, nullptr);
+
+				// Add the new connection to the list of connected clients
+				FD_SET(client, &master);
+				// Send a welcome message to the connected client
+				/*string welcomeMsg = "Welcome to the Awesome Chat Server!\r\n";
+				send(client, welcomeMsg.c_str(), welcomeMsg.size() + 1, 0);*/
+
+			}
+			else {
+				for (int i = 0; i < master.fd_count; i++)
+				{
+					SOCKET outSock = master.fd_array[i];
+
+
+
+					char* buffer = 0;
+
+					buffer = (char*)malloc(bufferSize * sizeof(char));
+
+					if (buffer)
+					{
+
+						buffer[received] = 0;
+
+						printf(buffer);
+
+						size_t size = 0;
+						//LOG(received = recv(clientSocket, buffer, bufferSize, 0));
+
+						ParseParams(buffer);
+
+						char* jsonData = 0;
+
+						size_t jsonSize = CreateJson(&jsonData);
+
+						printf(buffer, jsonSize);
+
+						size = strlen(buffer);
+
+						if (jsonSize > 0)
+						{
+							memcpy(buffer + size, jsonData, jsonSize);
+
+							free(jsonData);
+
+							size += jsonSize;
+						}
+
+						buffer[size] = 0;
+
+						send(outSock, buffer, (int)size, 0);
+						//Sleep(1000);
+
+						free(buffer);
+
+						//return sent;
+
+						Sleep(100);
+
+					}
+
+				}
+			}
+		}
+	}
+	// Remove the listening socket from the master file descriptor set and close it
+	// to prevent anyone else trying to connect.
+	FD_CLR(listening, &master);
+	closesocket(listening);
+
+	// Message to let users know what's happening.
+	string msg = "Server is shutting down. Goodbye\r\n";
+
+	while (master.fd_count > 0)
+	{
+		// Get the socket number
+		SOCKET sock = master.fd_array[0];
+
+		// Send the goodbye message
+		send(sock, msg.c_str(), msg.size() + 1, 0);
+
+		// Remove it from the master file list and close the socket
+		FD_CLR(sock, &master);
+		closesocket(sock);
+	}
+
+	// Cleanup winsock
+	WSACleanup();
+
 
 	
 }
