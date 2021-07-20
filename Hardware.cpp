@@ -818,12 +818,12 @@ unsigned long int __stdcall ClientThread(void* parameter)
 	int received = 0, sent = 0;
 
 	int bufferSize = 1000000;
-
-	char* buffer = 0;
 	while (true) {
+	char* buffer = 0;
+	
 		LOG(buffer = (char*)malloc(bufferSize * sizeof(char)));
 
-		LOG(received = recv(clientSocket, buffer, bufferSize, 0));
+	//	LOG(received = recv(clientSocket, buffer, bufferSize, 0));
 
 
 		buffer[received] = 0;
@@ -860,17 +860,14 @@ unsigned long int __stdcall ClientThread(void* parameter)
 
 
 		LOG(sent = send(clientSocket, buffer, (int)size, 0));
-		Sleep(1);
+		Sleep(10);
 
-		free(buffer);
+	//	free(buffer);
 	}
 
 		
 	
-
-
-
-	return sent;
+	//return sent;
 }
 void Hardware::StopServer()
 {
@@ -902,9 +899,9 @@ void Hardware::CreateServer()
 			{
 				if (LOG(listen(serverSocket, SOMAXCONN)) == 0)
 				{
-				
 					while (true)
 					{
+						
 						SOCKET clientSocket = INVALID_SOCKET;
 
 						clientSocket = accept(serverSocket, 0, 0);
