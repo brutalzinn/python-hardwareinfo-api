@@ -253,15 +253,9 @@ void ShowContextMenu(HWND hwnd, POINT pt, UINT message, WPARAM wParam, LPARAM lP
             }
             // respect menu drop alignment
        
-            UINT  menuItemId  = TrackPopupMenuEx(hSubMenu, TPM_RIGHTALIGN | TPM_LEFTALIGN | TPM_RETURNCMD | TPM_NONOTIFY, pt.x, pt.y, hwnd, NULL);
+           TrackPopupMenuEx(hSubMenu, TPM_RIGHTALIGN | TPM_LEFTALIGN | TPM_NONOTIFY, pt.x, pt.y, hwnd, NULL);
 
-            if (IDM_INICIARCOMSISTEMA == menuItemId)
-            {
-                if (mOptionsChecked)
-                    mOptionsChecked = FALSE;
-                else
-                    mOptionsChecked = TRUE;
-            }
+          
          //   WndProc(hwnd, menuItemId,wParam,lParam);
         }
         DestroyMenu(hMenu);
@@ -304,7 +298,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         case IDM_INICIARCOMSISTEMA:
             OutputDebugString(L"Cliked startup...");
-
+            if (mOptionsChecked)
+                mOptionsChecked = FALSE;
+            else
+                mOptionsChecked = TRUE;
             switch (mOptionsChecked) {
             case TRUE:
                 OutputDebugString(L"Create startup...");
