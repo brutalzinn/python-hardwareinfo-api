@@ -20,7 +20,7 @@ void AutoStartUp::createAutoStartUp()
     //Get the full path of the program
     GetModuleFileName(NULL, (LPWCH)fileName, iMaxPathLength);
     //Find system startup item
-    LPCTSTR lpAutoStartUp = _T("Software\\Microsoft\\Windows\\CurrentVersion\\Run");
+    LPCTSTR lpAutoStartUp = _T("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run");
     //Add AutoStartUp
     long lOpenKey = RegOpenKeyEx(HKEY_LOCAL_MACHINE, lpAutoStartUp, 0, KEY_WRITE, &hkey);
     if (lOpenKey == ERROR_SUCCESS)
@@ -28,6 +28,7 @@ void AutoStartUp::createAutoStartUp()
         RegSetValueEx(hkey, _T("PythonHardwareMonitor"), 0, REG_SZ, (const BYTE*)(LPCSTR)fileName, iMaxPathLength);
         RegCloseKey(hkey);
     }
+  ;
 }
 
 void AutoStartUp::deleteAutoStartUp()
@@ -38,7 +39,7 @@ void AutoStartUp::deleteAutoStartUp()
     //Get the full path of the program
     GetModuleFileName(NULL, (LPWCH)fileName, iMaxPathLength);
     //Find system startup item
-    LPCTSTR lpAutoStartUp = _T("Software\\Microsoft\\Windows\\CurrentVersion\\Run");
+    LPCTSTR lpAutoStartUp = _T("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run");
     //Add AutoStartUp
     long lOpenKey = RegOpenKeyEx(HKEY_LOCAL_MACHINE, lpAutoStartUp, 0, KEY_WRITE, &hkey);
     if (lOpenKey == ERROR_SUCCESS)
