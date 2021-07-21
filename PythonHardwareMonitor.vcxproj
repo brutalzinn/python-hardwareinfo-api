@@ -139,13 +139,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\Simple-WebSocket-Server\client_ws.hpp" />
-    <ClInclude Include="..\Simple-WebSocket-Server\client_wss.hpp" />
-    <ClInclude Include="..\Simple-WebSocket-Server\crypto.hpp" />
-    <ClInclude Include="..\Simple-WebSocket-Server\server_ws.hpp" />
-    <ClInclude Include="..\Simple-WebSocket-Server\server_wss.hpp" />
-    <ClInclude Include="..\Simple-WebSocket-Server\status_code.hpp" />
-    <ClInclude Include="..\Simple-WebSocket-Server\utility.hpp" />
+    <ClInclude Include="AutoStartUp.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="PythonHardwareMonitor.h" />
     <ClInclude Include="Resource.h" />
@@ -153,6 +147,7 @@
     <ClInclude Include="ThreadSignal.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AutoStartUp.cpp" />
     <ClCompile Include="Hardware.cpp" />
     <ClCompile Include="PythonHardwareMonitor.cpp" />
   </ItemGroup>

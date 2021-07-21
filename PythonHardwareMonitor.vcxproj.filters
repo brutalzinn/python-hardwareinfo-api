@@ -13,9 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="websocket">
-      <UniqueIdentifier>{8afff77d-aca4-4c18-b50e-0fc9128109d0}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -33,26 +30,8 @@
     <ClInclude Include="ThreadSignal.h">
       <Filter>Arquivos de Cabeçalho</Filter>
     </ClInclude>
-    <ClInclude Include="..\Simple-WebSocket-Server\client_ws.hpp">
-      <Filter>websocket</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Simple-WebSocket-Server\utility.hpp">
-      <Filter>websocket</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Simple-WebSocket-Server\status_code.hpp">
-      <Filter>websocket</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Simple-WebSocket-Server\server_wss.hpp">
-      <Filter>websocket</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Simple-WebSocket-Server\server_ws.hpp">
-      <Filter>websocket</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Simple-WebSocket-Server\crypto.hpp">
-      <Filter>websocket</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Simple-WebSocket-Server\client_wss.hpp">
-      <Filter>websocket</Filter>
+    <ClInclude Include="AutoStartUp.h">
+      <Filter>Arquivos de Cabeçalho</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -60,6 +39,9 @@
       <Filter>Arquivos de Origem</Filter>
     </ClCompile>
     <ClCompile Include="Hardware.cpp">
+      <Filter>Arquivos de Origem</Filter>
+    </ClCompile>
+    <ClCompile Include="AutoStartUp.cpp">
       <Filter>Arquivos de Origem</Filter>
     </ClCompile>
   </ItemGroup>

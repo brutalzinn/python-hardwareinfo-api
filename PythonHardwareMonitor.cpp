@@ -6,13 +6,15 @@
 #include "framework.h"
 #include "PythonHardwareMonitor.h"
 #include "Hardware.h"
+#include "AutoStartUp.h"
+
+#include "iostream"
 #include <thread>
 #include <shellapi.h>
 #include <commctrl.h>
 #include "resource.h"
 #include <windows.h>
 #include <strsafe.h>
-#include <iostream>
 
 HINSTANCE g_hInst = NULL;
 HWND hwnd_Inst = NULL;
@@ -22,6 +24,8 @@ std::thread ThreadMain;
 
 UINT_PTR const HIDEFLYOUT_TIMER_ID = 1;
 Hardware hardware;
+AutoStartUp autoStartUp;
+
 wchar_t const szWindowClass[] = L"PYTHONHARDWAREMONITORICONTest";
 wchar_t const szFlyoutWindowClass[] = L"NotificationFlyout";
 
@@ -38,14 +42,14 @@ LRESULT CALLBACK    FlyoutWndProc(HWND, UINT, WPARAM, LPARAM);
 HWND                ShowFlyout(HWND hwnd);
 void                HideFlyout(HWND hwndMainWindow, HWND hwndFlyout);
 void                PositionFlyout(HWND hwnd, REFGUID guidIcon);
-void                ShowContextMenu(HWND hwnd, POINT pt);
+void                ShowContextMenu(HWND hwnd, POINT pt, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL                AddPYTHONHARDWAREMONITORICON(HWND hwnd);
 BOOL                DeletePYTHONHARDWAREMONITORICON();
 BOOL                ShowLowInkBalloon();
 BOOL                ShowNoInkBalloon();
 BOOL                ShowPrintJobBalloon();
 BOOL                RestoreTooltip();
-
+BOOL                mOptionsChecked = FALSE;
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR /*lpCmdLine*/, int nCmdShow)
 {
     g_hInst = hInstance;
@@ -100,10 +104,12 @@ BOOL AddPYTHONHARDWAREMONITORICON(HWND hwnd)
     nid.hWnd = hwnd;
     // add the icon, setting the icon, tooltip, and callback message.
     // the icon will be identified with the GUID
-    nid.uFlags = NIF_ICON | NIF_TIP | NIF_MESSAGE | NIF_SHOWTIP ;
+    nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP; ;
     nid.guidItem = __uuidof(PrinterIcon); 
     nid.uCallbackMessage = WMAPP_NOTIFYCALLBACK;
     LoadIconMetric(g_hInst, MAKEINTRESOURCE(IDI_PYTHONHARDWAREMONITOR), LIM_SMALL, &nid.hIcon);
+    //wcscpy_s(nid.szTip, _T("SunjianDlg System Icon Test")); // The icon displays the prompt string
+
     LoadString(g_hInst, IDS_TOOLTIP, nid.szTip, ARRAYSIZE(nid.szTip));
     Shell_NotifyIcon(NIM_ADD, &nid) ? S_OK : E_FAIL;
 
@@ -222,9 +228,9 @@ void HideFlyout(HWND hwndMainWindow, HWND hwndFlyout)
     // of hiding.
     SetTimer(hwndMainWindow, HIDEFLYOUT_TIMER_ID, GetDoubleClickTime(), NULL);
 }
-BOOL mOptionsChecked = FALSE;
 
-void ShowContextMenu(HWND hwnd, POINT pt)
+
+void ShowContextMenu(HWND hwnd, POINT pt, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HMENU hMenu = LoadMenu(g_hInst, MAKEINTRESOURCE(IDC_CONTEXTMENU));
     if (hMenu)
@@ -234,24 +240,33 @@ void ShowContextMenu(HWND hwnd, POINT pt)
         {
             // our window must be foreground before calling TrackPopupMenu or the menu will not disappear when the user clicks away
             SetForegroundWindow(hwnd);
+            if (mOptionsChecked)
+            {
+                //CheckMenuItem(hSubMenu, IDM_OPTIONS, MF_BYCOMMAND | MF_CHECKED);
 
+                MENUITEMINFO mi = { 0 };
+                mi.cbSize = sizeof(MENUITEMINFO);
+                mi.fMask = MIIM_STATE;
+                mi.fState = MF_CHECKED;
+
+                SetMenuItemInfo(hSubMenu, IDM_INICIARCOMSISTEMA, FALSE, &mi);
+            }
             // respect menu drop alignment
-            UINT uFlags = TPM_RIGHTBUTTON;
-            if (GetSystemMetrics(SM_MENUDROPALIGNMENT) != 0)
-            {
-                uFlags |= TPM_RIGHTALIGN;
-            }
-            else
-            {
-                uFlags |= TPM_LEFTALIGN;
-            }
+       
+            UINT  menuItemId  = TrackPopupMenuEx(hSubMenu, TPM_RIGHTALIGN | TPM_LEFTALIGN | TPM_RETURNCMD | TPM_NONOTIFY, pt.x, pt.y, hwnd, NULL);
 
-            TrackPopupMenuEx(hSubMenu, uFlags, pt.x, pt.y, hwnd, NULL);
+            if (IDM_INICIARCOMSISTEMA == menuItemId)
+            {
+                if (mOptionsChecked)
+                    mOptionsChecked = FALSE;
+                else
+                    mOptionsChecked = TRUE;
+            }
+         //   WndProc(hwnd, menuItemId,wParam,lParam);
         }
         DestroyMenu(hMenu);
     }
 }
-
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     static HWND s_hwndFlyout = NULL;
@@ -276,14 +291,35 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
         int const wmId = LOWORD(wParam);
         // Parse the menu selections:
+        OutputDebugString(L"Commands called...");
+
         switch (wmId)
         {
-        case IDM_ABOUT:
-       //  DialogBox(g_hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hwnd, WndProc);
-            hardware.StopServer();
-      
-         break;
+       // case IDM_ABOUT:
+       ////  DialogBox(g_hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hwnd, WndProc);
+       // //    hardware.StopServer();
+            OutputDebugString(L"Cliked about...");
 
+       //  break;
+
+        case IDM_INICIARCOMSISTEMA:
+            OutputDebugString(L"Cliked startup...");
+
+            switch (mOptionsChecked) {
+            case TRUE:
+                OutputDebugString(L"Create startup...");
+               autoStartUp.createAutoStartUp();
+             break;
+            case FALSE:
+                OutputDebugString(L"Delete startup...");
+
+                autoStartUp.deleteAutoStartUp();
+             break;
+            }
+            //  DialogBox(g_hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hwnd, WndProc);
+             //    hardware.StopServer();
+
+            break;
 
         case IDM_EXIT:
          //   hardware.StopServer();
@@ -337,7 +373,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
         case WM_CONTEXTMENU:
         {
             POINT const pt = { LOWORD(wParam), HIWORD(wParam) };
-            ShowContextMenu(hwnd, pt);
+            ShowContextMenu(hwnd, pt, message,  wParam, lParam);
         }
         break;
         }
