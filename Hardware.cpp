@@ -1024,10 +1024,10 @@ void Hardware::CreateServer()
 		fd_set copy = master;
 
 		// See who's talking to us
-		struct timeval tv;
-		tv.tv_sec = 5;
-		tv.tv_usec = 0;
-		int socketCount = select(0, &copy, &copy, nullptr, &tv);//select(0, &copy, nullptr, nullptr, nullptr);
+		//struct timeval tv;
+		//tv.tv_sec = 5;
+		//tv.tv_usec = 0;
+		int socketCount = select(0, &copy, &copy, nullptr, nullptr);//select(0, &copy, nullptr, nullptr, nullptr);
 
 	
 		// Loop through all the current connections / potential connect
@@ -1099,7 +1099,7 @@ void Hardware::CreateServer()
 
 						//return sent;
 
-						Sleep(100);
+						Sleep(1);
 
 					}
 
