@@ -1029,6 +1029,7 @@ void Hardware::CreateServer()
 		//tv.tv_usec = 0;
 		int socketCount = select(0, &copy, &copy, nullptr, nullptr);//select(0, &copy, nullptr, nullptr, nullptr);
 
+
 	
 		// Loop through all the current connections / potential connect
 		for (int i = 0; i < socketCount; i++)
@@ -1050,61 +1051,85 @@ void Hardware::CreateServer()
 				send(client, welcomeMsg.c_str(), welcomeMsg.size() + 1, 0);*/
 
 			}
-			else {
-				for (int i = 0; i < master.fd_count; i++)
+			else 
+			{
+
+				char buf[4096];
+				ZeroMemory(buf, 4096);
+				// Receive message
+				int bytesIn = recv(sock, buf, 1, MSG_PEEK);
+				//	int bytesIn = recv(sock, buf, 4096, 0);
+
+				if (bytesIn <= 0)
 				{
-					SOCKET outSock = master.fd_array[i];
+					// Drop the client
+					closesocket(sock);
+					FD_CLR(sock, &master);
+				}
+				else {
 
-
-
-					char* buffer = 0;
-
-					buffer = (char*)malloc(bufferSize * sizeof(char));
-
-					if (buffer)
+					for (int i = 0; i < master.fd_count; i++)
 					{
+						SOCKET outSock = master.fd_array[i];
 
-						buffer[received] = 0;
 
-						printf(buffer);
 
-						size_t size = 0;
-						//LOG(received = recv(clientSocket, buffer, bufferSize, 0));
+						char* buffer = 0;
 
-						ParseParams(buffer);
+						buffer = (char*)malloc(bufferSize * sizeof(char));
 
-						char* jsonData = 0;
-
-						size_t jsonSize = CreateJson(&jsonData);
-
-						printf(buffer, jsonSize);
-
-						size = strlen(buffer);
-
-						if (jsonSize > 0)
+						if (buffer)
 						{
-							memcpy(buffer + size, jsonData, jsonSize);
 
-							free(jsonData);
+							buffer[received] = 0;
 
-							size += jsonSize;
+							printf(buffer);
+
+							size_t size = 0;
+							//LOG(received = recv(clientSocket, buffer, bufferSize, 0));
+
+							ParseParams(buffer);
+
+							char* jsonData = 0;
+
+							size_t jsonSize = CreateJson(&jsonData);
+
+							printf(buffer, jsonSize);
+
+							size = strlen(buffer);
+
+							if (jsonSize > 0)
+							{
+								memcpy(buffer + size, jsonData, jsonSize);
+
+								free(jsonData);
+
+								size += jsonSize;
+							}
+
+							buffer[size] = 0;
+
+							send(outSock, buffer, (int)size, 0);
+							//Sleep(1000);
+
+							free(buffer);
+
+							//return sent;
+
+
 						}
-
-						buffer[size] = 0;
-
-						send(outSock, buffer, (int)size, 0);
-						//Sleep(1000);
-
-						free(buffer);
-
-						//return sent;
-
-						Sleep(1);
 
 					}
 
+					Sleep(50);
+
+
 				}
+				_RPT1(0, "%d\n", master.fd_count);
+
 			}
+			
+
 		}
 	}
 	// Remove the listening socket from the master file descriptor set and close it
